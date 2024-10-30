@@ -73,7 +73,7 @@ class TableEditorApp(ctk.CTk):
         self.error_textbox = ctk.CTkTextbox(self.error_frame, height=60, wrap="word")
         self.error_textbox.pack(expand=True, fill="both", padx=5, pady=5)
         self.error_frame.pack(fill="x", padx=10, pady=5)
-        self.error_frame.pack_forget()  # Скрываем фрейм с сообщениями изначально
+        self.error_frame.pack_forget()  
 
     def show_info_message(self, message):
         """Метод для вывода информационного сообщения"""
@@ -91,11 +91,10 @@ class TableEditorApp(ctk.CTk):
 
     @catch_errors
     def load_tables(self):
-        """Загружает список таблиц из базы данных и отображает их как радиокнопки"""
         for widget in self.tables_frame.winfo_children():
             widget.destroy()
 
-        tables = self.db_manager.get_tables()  # Получаем список таблиц из базы данных
+        tables = self.db_manager.get_tables()  
 
         for table_name in tables:
             radio_button = ctk.CTkRadioButton(self.tables_frame, text=table_name, variable=self.table_radio_var,
@@ -107,7 +106,6 @@ class TableEditorApp(ctk.CTk):
 
     @catch_errors
     def edit_table(self):
-        """Функция для редактирования выбранной таблицы"""
         selected_table = self.table_radio_var.get()
         if selected_table:
             self.show_table_form(selected_table)
@@ -115,41 +113,33 @@ class TableEditorApp(ctk.CTk):
             self.show_error_message("Не выбрана таблица для редактирования")
 
     def show_table_form(self, table_name):
-        """Отображает форму для редактирования полей выбранной таблицы"""
         for widget in self.fields_frame.winfo_children():
             widget.destroy()
 
         self.field_entries.clear()
 
-        # Получаем поля таблицы из базы данных
         columns = self.db_manager.get_table_fields(table_name)
 
         for col_name, col_type, is_nullable, is_primary in columns:
-            # Преобразуем тип данных в строковое представление
             if isinstance(col_type, ColumnType):
                 type_str = col_type.value
             elif isinstance(col_type, str):
                 type_str = col_type
             else:
-                # Если тип не является ни ColumnType, ни строкой, преобразуем его в строку
                 type_str = str(col_type)
 
-            # Приведение типа к одному из доступных значений
             available_types = ["INTEGER", "FLOAT", "VARCHAR(255)", "DATE"]
             if type_str not in available_types:
-                # Можно добавить маппинг для других типов
                 type_mapping = {
                     'integer': 'INTEGER',
                     'double precision': 'FLOAT',
                     'character varying': 'VARCHAR(255)',
-                    'timestamp': 'DATE',
-                    # добавьте другие маппинги по необходимости
+                    'timestamp': 'DATE'
                 }
                 type_str = type_mapping.get(type_str.lower(), 'VARCHAR(255)')
 
             self.add_field(col_name, type_str, is_primary)
 
-        # Создаём или восстанавливаем кнопку добавления столбца
         if not self.add_field_button or not self.add_field_button.winfo_exists():
             self.add_field_button = ctk.CTkButton(
                 self.fields_frame,
@@ -171,15 +161,12 @@ class TableEditorApp(ctk.CTk):
         self.new_table_name_entry = ctk.CTkEntry(self.fields_frame, placeholder_text="Имя новой таблицы")
         self.new_table_name_entry.pack(pady=10)
 
-        # Добавляем первое поле для новой таблицы
         self.add_field()
 
-        # Кнопка для добавления нового поля
         if not self.add_field_button:
             self.add_field_button = ctk.CTkButton(self.fields_frame, text="Добавить поле", command=self.add_field)
             self.add_field_button.pack(pady=10)
 
-        # Кнопка для сохранения новой таблицы
         save_table_button = ctk.CTkButton(self.fields_frame, text="Создать таблицу", command=self.save_new_table)
         save_table_button.pack(pady=10)
 
@@ -190,7 +177,6 @@ class TableEditorApp(ctk.CTk):
         field_frame = ctk.CTkFrame(self.fields_frame, corner_radius=5)
         field_frame.pack(fill="x", padx=10, pady=5)
 
-        # Поле для имени
         field_name_entry = ctk.CTkEntry(field_frame, width=200, placeholder_text="Имя поля")
         field_name_entry.pack(side="left", padx=5)
         field_name_entry.insert(0, field_name)
