@@ -79,7 +79,6 @@ class Database:
         self.connect()
 
     def connect(self):
-        """Устанавливает подключение и курсор."""
         try:
             self.connection = psycopg2.connect(**self.config)
             self.cursor = self.connection.cursor()
@@ -89,7 +88,6 @@ class Database:
             raise
 
     def close(self):
-        """Закрытие соединения с базой данных"""
         try:
             if self.cursor:
                 self.cursor.close()
@@ -101,7 +99,6 @@ class Database:
             raise
 
     def reopen_cursor(self):
-        """Переоткрытие курсора"""
         try:
             if self.cursor and not self.cursor.closed:
                 self.cursor.close()
@@ -111,7 +108,6 @@ class Database:
             raise
 
     def execute_query(self, query: str, params=None):
-        """Выполняет SQL-запрос."""
         self.reopen_cursor()
         try:
             if params:
@@ -125,7 +121,6 @@ class Database:
             raise
 
     def get_tables(self):
-        """Возвращает список таблиц в базе данных."""
         self.reopen_cursor()
         try:
             self.cursor.execute("""
@@ -140,7 +135,6 @@ class Database:
             raise
 
     def get_table_fields(self, table_name):
-        """Возвращает список полей и их типов данных для указанной таблицы."""
         self.reopen_cursor()
         try:
             query = sql.SQL("""
@@ -174,7 +168,6 @@ class Database:
             raise
 
     def create_table_with_fields(self, schema: TableSchema):
-        """Создание новой таблицы с указанными полями."""
         field_definitions = []
         primary_keys = []
 
@@ -204,11 +197,9 @@ class Database:
                 current_field = next((f for f in current_fields if f[0] == new_field.name), None)
 
                 if current_field:
-                    # Если поле существует, проверяем, нужно ли его изменить
                     if current_field[1] != new_field.type:
                         query = f"ALTER TABLE {table_name} ALTER COLUMN {new_field.name} TYPE {new_field.type.value}"
                         self.execute_query(query)
-                    # Обновляем статус первичного ключа
                     if new_field.is_primary:
                         query = f"ALTER TABLE {table_name} ADD PRIMARY KEY ({new_field.name})"
                         self.execute_query(query)
@@ -216,7 +207,6 @@ class Database:
                         query = f"ALTER TABLE {table_name} DROP CONSTRAINT IF EXISTS {table_name}_{new_field.name}_pkey"
                         self.execute_query(query)
                 else:
-                    # Если поле новое, добавляем его
                     query = f"ALTER TABLE {table_name} ADD COLUMN {new_field.name} {new_field.type.value}"
                     self.execute_query(query)
 
@@ -224,12 +214,10 @@ class Database:
             raise ValueError(str(e))
 
     def delete_table(self, table_name):
-        """Удаление таблицы из базы данных."""
         query = sql.SQL("DROP TABLE IF EXISTS {}").format(sql.Identifier(table_name))
         self.execute_query(query)
 
     def delete_column(self, table_name, column_name):
-        """Удаление столбца из таблицы."""
         query = sql.SQL("ALTER TABLE {} DROP COLUMN IF EXISTS {}").format(
             sql. Identifier(table_name),
             sql.Identifier(column_name)
@@ -237,16 +225,13 @@ class Database:
         self.execute_query(query)
 
     def alter_column_type_with_using(self, table_name, column_name, new_type):
-        """Изменяет тип столбца, используя явное приведение типа через USING."""
         query = f"""
         ALTER TABLE {table_name}
         ALTER COLUMN {column_name} TYPE {new_type} USING {column_name}::{new_type}
         """
         self.execute_query(query)
 
-    ###
     def rollback_transaction(self):
-        """Откатывает текущую транзакцию"""
         try:
             if self.connection:
                 self.connection.rollback()
@@ -254,7 +239,6 @@ class Database:
             raise DatabaseError(f"Ошибка при откате транзакции: {str(e)}")
 
     def remove_primary_key(self, table_name):
-        """Удаляет первичный ключ таблицы"""
         query = sql.SQL("ALTER TABLE {} DROP CONSTRAINT IF EXISTS {}"). \
             format(
             sql.Identifier(table_name),
@@ -263,7 +247,6 @@ class Database:
         self.execute_query(query)
 
     def add_primary_key(self, table_name, column_name):
-        """Добавляет первичный ключ к таблице"""
         query = sql.SQL("ALTER TABLE {} ADD PRIMARY KEY ({})").format(
             sql.Identifier(table_name),
             sql.Identifier(column_name)
